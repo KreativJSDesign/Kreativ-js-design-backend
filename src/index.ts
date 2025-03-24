@@ -93,6 +93,7 @@ const allowedOrigins = [
   process.env.FRONTEND_URL_PROD,
 ].filter(Boolean) as string[];
 
+
 app.use(
   cors({
     origin: allowedOrigins,
