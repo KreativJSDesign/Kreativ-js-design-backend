@@ -73,7 +73,7 @@ export const CreateOrderWebhook = async (req: any, res: any): Promise<void> => {
 
     const webhookPayload = {
       event_name: "listings.update",
-      callback_url: "https://etsy-scratch-card.ensuesoft.com/api/etsy/listings",
+      callback_url: "https://kreativjsdesignapi.vercel.app/api/etsy/listings",
       shop_id: shopId,
     };
 

@@ -188,7 +188,7 @@ export async function fetchEmails() {
             const transactionInfo =
               await TransactionModel.create(NewTransaction);
             const scratchCardLink = `${process.env.NODE_ENV === "production" ? process.env.FRONTEND_URL_PROD : process.env.FRONTEND_URL_LOCAL}/customize-card/${transactionInfo._id}`;
-            // await sendEmailNotification(email, scratchCardLink);
+            await sendEmailNotification(email, scratchCardLink);
           } catch (error: any) {
             console.error("❌ Error saving transaction:", error);
           }
