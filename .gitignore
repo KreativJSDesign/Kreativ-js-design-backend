@@ -9,5 +9,4 @@
 node_modules/
 jspm_packages/
 build
-package-lock.json
 .vercel
