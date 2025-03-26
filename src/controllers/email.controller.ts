@@ -146,7 +146,6 @@ export async function fetchEmails() {
           console.error("❌ Error fetching transaction ID");
           continue;
         }
-
         const transactionHistory = await TransactionModel.findOne({
           transaction_id: transactionID,
         });
