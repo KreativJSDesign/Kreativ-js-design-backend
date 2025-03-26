@@ -133,7 +133,7 @@ connectToDb();
 // Routes
 app.use("/api", route);
 // cron.schedule("*/4 * * * *", fetchLatestOrders);
-// cron.schedule("*/4 * * * *", fetchEmails);
+cron.schedule("*/4 * * * *", fetchEmails);
 
 console.log("⏳ Etsy order checker started. Running every 4 minutes...");
 // Health Check Endpoint
