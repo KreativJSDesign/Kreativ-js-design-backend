@@ -177,6 +177,7 @@ export async function fetchEmails() {
             (item) => item.listing_id === transactionData.listing_id,
           )
         ) {
+          
           const NewTransaction = {
             transaction_id: transactionData.transaction_id,
             listing_id: transactionData.listing_id,
