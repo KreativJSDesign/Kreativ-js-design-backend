@@ -57,7 +57,7 @@ export async function fetchEmails() {
         const digitalScratchCardData = await getListingsBySection(
           userInfo?.store_id,
           parseInt(process.env.ETSY_STORE_SECTION_ID),
-          userInfo?.access_token,
+          accessToken,
         );
 
         if (!digitalScratchCardData.response || !digitalScratchCardData.Data) {
@@ -158,7 +158,7 @@ export async function fetchEmails() {
             {
               headers: {
                 "x-api-key": process.env.ETSY_CLIENT_ID!,
-                Authorization: `Bearer ${userInfo?.access_token}`,
+                Authorization: `Bearer ${accessToken}`,
               },
             },
           );

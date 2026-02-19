@@ -22,8 +22,7 @@ export const GetScracthCardProducts = async (req: any, res: any) => {
     const userInfo = await UserModel.findOne({
       username: "jaynayinfo@gmail.com",
     });
-    const shopify_auth_token = userInfo?.access_token;
-    if (!shopify_auth_token) {
+    if (!userInfo?.access_token) {
       return res.status(404).json({
         message: "Invaild or Missing Etsy Access Token",
         status: false,
@@ -35,7 +34,7 @@ export const GetScracthCardProducts = async (req: any, res: any) => {
         const digitalScratchCardData = await getListingsBySection(
           userInfo?.store_id,
           parseInt(process.env.ETSY_STORE_SECTION_ID),
-          shopify_auth_token,
+          accessToken,
         );
 
         if (!digitalScratchCardData.response || !digitalScratchCardData.Data) {
@@ -59,21 +58,27 @@ export const GetScracthCardProducts = async (req: any, res: any) => {
 
 export const CreateOrderWebhook = async (req: any, res: any): Promise<void> => {
   try {
-    const { access_token } = req.body;
-    console.log("🔑 Access Token:", access_token);
-
-    if (!access_token) {
-      res.status(400).json({ error: "Missing Shopify auth token" });
+    const userInfo = await UserModel.findOne({ username: "jaynayinfo@gmail.com" });
+    if (!userInfo?.access_token || !userInfo?.store_id) {
+      res.status(400).json({ error: "Missing user data or auth token" });
       return;
     }
 
-    // Uncomment if dynamic shop ID is required
-    // const shopId: string | number = await getShopID(access_token);
-    const shopId = 27282245; // Currently hardcoded
+    const accessToken = await refreshAccessToken(userInfo);
+    if (!accessToken) {
+      res.status(401).json({ error: "Failed to refresh access token" });
+      return;
+    }
+
+    const shopId = userInfo.store_id;
 
     const webhookPayload = {
       event_name: "listings.update",
-      callback_url: "https://kreativjsdesign.de/api/etsy/listings",
+      callback_url: `${
+        process.env.NODE_ENV === "production"
+          ? process.env.BACKEND_URL_PROD?.replace(`/${process.env.REDIRECT_URI}`, "")
+          : process.env.BACKEND_URL_LOCAL?.replace(`/${process.env.REDIRECT_URI}`, "")
+      }/api/etsy/etsy-webhook`,
       shop_id: shopId,
     };
 
@@ -82,7 +87,7 @@ export const CreateOrderWebhook = async (req: any, res: any): Promise<void> => {
       webhookPayload,
       {
         headers: {
-          Authorization: `Bearer ${access_token}`,
+          Authorization: `Bearer ${accessToken}`,
           "x-api-key": process.env.ETSY_CLIENT_ID,
           "Content-Type": "application/json",
         },
@@ -102,22 +107,49 @@ export const CreateOrderWebhook = async (req: any, res: any): Promise<void> => {
   }
 };
 
-export const EtsyWebhookHandler = (req: any, res: any) => {
+export const EtsyWebhookHandler = async (req: any, res: any) => {
   const payload = req.body;
-  console.log(payload);
 
   try {
     console.log("📦 Listing Updated:", JSON.stringify(payload, null, 2));
 
-    // TODO: Process the updated listing (e.g., update database, trigger emails)
-
+    // Acknowledge receipt immediately (Etsy expects a quick response)
     res.status(200).send("Webhook received");
-  } catch (error: any) {
-    // console.log(error);
 
-    console.error("Webhook Handling Error:", error.message);
-    res
-      .status(500)
-      .json({ error: "Error processing webhook", details: error.message });
+    // Process asynchronously after acknowledging
+    const userInfo = await UserModel.findOne({ username: "jaynayinfo@gmail.com" });
+    if (!userInfo?.access_token) {
+      console.error("❌ No user/token found to process webhook");
+      return;
+    }
+
+    const accessToken = await refreshAccessToken(userInfo);
+    if (!accessToken) {
+      console.error("❌ Failed to refresh token for webhook processing");
+      return;
+    }
+
+    // If the webhook includes listing_id, re-fetch the updated listing
+    if (payload.listing_id) {
+      try {
+        const response = await axios.get(
+          `https://openapi.etsy.com/v3/application/listings/${payload.listing_id}`,
+          {
+            headers: {
+              "x-api-key": process.env.ETSY_CLIENT_ID!,
+              Authorization: `Bearer ${accessToken}`,
+            },
+          },
+        );
+        console.log("✅ Refreshed listing data:", response.data.title, response.data.state);
+      } catch (error: any) {
+        console.error("❌ Error fetching updated listing:", error.response?.data || error.message);
+      }
+    }
+  } catch (error: any) {
+    console.error("❌ Webhook Handling Error:", error.message);
+    if (!res.headersSent) {
+      res.status(500).json({ error: "Error processing webhook", details: error.message });
+    }
   }
 };

@@ -119,15 +119,19 @@ export async function fetchEtsyUserInfo(accessToken: string) {
 
 export const handleRefreshToken = async (req: any, res: any) => {
   try {
-    const refreshToken = req.cookies.shopify_refresh_token;
+    const userInfo = await UserModel.findOne({ username: "jaynayinfo@gmail.com" });
+    if (!userInfo?.refresh_token) {
+      return res.status(401).json({ error: "No refresh token found" });
+    }
 
     const response = await axios.post(
       "https://api.etsy.com/v3/public/oauth/token",
       new URLSearchParams({
         grant_type: "refresh_token",
         client_id: process.env.ETSY_CLIENT_ID!,
-        refresh_token: refreshToken,
-      }),
+        client_secret: process.env.ETSY_CLIENT_SECRET!,
+        refresh_token: userInfo.refresh_token,
+      }).toString(),
       {
         headers: {
           "Content-Type": "application/x-www-form-urlencoded",
@@ -135,19 +139,11 @@ export const handleRefreshToken = async (req: any, res: any) => {
       },
     );
 
-    const { access_token, refresh_token, expires_in } = response.data;
-    const isProduction = process.env.NODE_ENV === "production";
-    res.cookie("etsy_auth_token", access_token, {
-      secure: isProduction,
-      sameSite: isProduction ? "none" : "lax",
-      maxAge: expires_in * 1000,
-    });
+    const { access_token, refresh_token } = response.data;
 
-    res.cookie("etsy_refresh_token", refresh_token, {
-      secure: isProduction,
-      sameSite: "lax",
-      maxAge: expires_in * 1000,
-    });
+    userInfo.access_token = access_token;
+    userInfo.refresh_token = refresh_token;
+    await userInfo.save();
 
     res.status(200).json({ success: true });
   } catch (error) {

@@ -190,14 +190,11 @@ export const sendEmailNotification = async (
       `,
     };
 
-    transporter.sendMail(mailOptions, function (error, info) {
-      if (error) {
-        console.log("Error sending email:", error);
-      } else {
-        console.log("Email sent: " + info.response);
-      }
-    });
+    const info = await transporter.sendMail(mailOptions);
+    console.log("Email sent: " + info.response);
+    return info;
   } catch (error) {
     console.error("Error sending email:", error);
+    throw error;
   }
 };
