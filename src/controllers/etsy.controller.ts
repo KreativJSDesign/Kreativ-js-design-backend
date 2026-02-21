@@ -84,66 +84,54 @@ export const DebugListings = async (req: any, res: any) => {
     }
 
     const sectionId = process.env.ETSY_STORE_SECTION_ID;
-    const apiKey = process.env.ETSY_CLIENT_ID!;
+    const apiKey = (process.env.ETSY_CLIENT_ID || "").trim();
     const debugInfo: any = {
       store_id: userInfo.store_id,
       env_section_id: sectionId,
       token_refreshed: true,
       api_key_length: apiKey.length,
-      api_key_trimmed_length: apiKey.trim().length,
-      api_key_has_whitespace: apiKey !== apiKey.trim(),
+      api_key_first4: apiKey.substring(0, 4),
+      api_key_last4: apiKey.substring(apiKey.length - 4),
       envCheck,
     };
 
-    // Fetch all shop sections
-    const sectionsResponse = await axios.get(
-      `https://openapi.etsy.com/v3/application/shops/${userInfo.store_id}/sections`,
-      {
-        headers: {
-          "x-api-key": apiKey.trim(),
-          Authorization: `Bearer ${accessToken}`,
-        },
-      },
-    );
-
-    debugInfo.shop_sections = sectionsResponse.data.results?.map((s: any) => ({
-      shop_section_id: s.shop_section_id,
-      title: s.title,
-    }));
-
-    // Check if configured section exists
-    const matchedSection = sectionsResponse.data.results?.find(
-      (s: any) => s.shop_section_id === parseInt(sectionId || "0"),
-    );
-    debugInfo.section_matched = !!matchedSection;
-    debugInfo.matched_section_title = matchedSection?.title || null;
-
-    // Try fetching listings for the configured section
-    if (matchedSection) {
-      const listingsResponse = await axios.get(
-        `https://openapi.etsy.com/v3/application/shops/${userInfo.store_id}/listings`,
+    // Step 1: Try a simple ping to Etsy with the API key
+    try {
+      const pingResponse = await axios.get(
+        `https://openapi.etsy.com/v3/application/openapi-ping`,
         {
           headers: {
-            "x-api-key": process.env.ETSY_CLIENT_ID!,
-            Authorization: `Bearer ${accessToken}`,
+            "x-api-key": apiKey,
           },
-          params: {
-            shop_section_id: parseInt(sectionId || "0"),
-            limit: 10,
-            include_private: true,
+        },
+      );
+      debugInfo.ping_status = "success";
+      debugInfo.ping_data = pingResponse.data;
+    } catch (pingError: any) {
+      debugInfo.ping_status = "failed";
+      debugInfo.ping_error = pingError.response?.data || pingError.message;
+    }
+
+    // Step 2: Try fetching shop sections
+    try {
+      const sectionsResponse = await axios.get(
+        `https://openapi.etsy.com/v3/application/shops/${userInfo.store_id}/sections`,
+        {
+          headers: {
+            "x-api-key": apiKey,
+            Authorization: `Bearer ${accessToken}`,
           },
         },
       );
 
-      debugInfo.listings_count = listingsResponse.data.results?.length || 0;
-      debugInfo.listings_sample = listingsResponse.data.results?.map(
-        (l: any) => ({
-          listing_id: l.listing_id,
-          title: l.title,
-          state: l.state,
-          shop_section_id: l.shop_section_id,
-        }),
-      );
+      debugInfo.sections_status = "success";
+      debugInfo.shop_sections = sectionsResponse.data.results?.map((s: any) => ({
+        shop_section_id: s.shop_section_id,
+        title: s.title,
+      }));
+    } catch (sectionsError: any) {
+      debugInfo.sections_status = "failed";
+      debugInfo.sections_error = sectionsError.response?.data || sectionsError.message;
     }
 
     return res.status(200).json(debugInfo);
