@@ -11,7 +11,7 @@ export const getListingsBySection = async (
       `https://openapi.etsy.com/v3/application/shops/${shopId}/sections`,
       {
         headers: {
-          "x-api-key": process.env.ETSY_CLIENT_ID!,
+          "x-api-key": `${process.env.ETSY_CLIENT_ID}:${process.env.ETSY_CLIENT_SECRET}`,
           Authorization: `Bearer ${accessToken}`,
         },
       },
@@ -41,7 +41,7 @@ export const getListingsBySection = async (
         `https://openapi.etsy.com/v3/application/shops/${shopId}/listings`,
         {
           headers: {
-            "x-api-key": process.env.ETSY_CLIENT_ID!,
+            "x-api-key": `${process.env.ETSY_CLIENT_ID}:${process.env.ETSY_CLIENT_SECRET}`,
             Authorization: `Bearer ${accessToken}`,
           },
           params: {

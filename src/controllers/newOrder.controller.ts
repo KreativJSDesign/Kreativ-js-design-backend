@@ -41,7 +41,7 @@ export const fetchLatestOrders = async () => {
         `https://openapi.etsy.com/v3/application/shops/${userInfo.store_id}/receipts`,
         {
           headers: {
-            "x-api-key": process.env.ETSY_CLIENT_ID!,
+            "x-api-key": `${process.env.ETSY_CLIENT_ID}:${process.env.ETSY_CLIENT_SECRET}`,
             Authorization: `Bearer ${accessToken}`,
           },
         },
@@ -55,7 +55,7 @@ export const fetchLatestOrders = async () => {
           `https://openapi.etsy.com/v3/application/shops/${userInfo.store_id}/receipts`,
           {
             headers: {
-              "x-api-key": process.env.ETSY_CLIENT_ID!,
+              "x-api-key": `${process.env.ETSY_CLIENT_ID}:${process.env.ETSY_CLIENT_SECRET}`,
               Authorization: `Bearer ${accessToken}`,
             },
           },
@@ -114,7 +114,7 @@ const fetchStoreListings = async (accessToken: string, shopId: string) => {
       `https://openapi.etsy.com/v3/application/shops/${shopId}/listings/active`,
       {
         headers: {
-          "x-api-key": process.env.ETSY_CLIENT_ID!,
+          "x-api-key": `${process.env.ETSY_CLIENT_ID}:${process.env.ETSY_CLIENT_SECRET}`,
           Authorization: `Bearer ${accessToken}`,
         },
       },
@@ -140,7 +140,7 @@ const fetchOrderItems = async (
       `https://openapi.etsy.com/v3/application/shops/${shopId}/receipts/${receiptId}/transactions`,
       {
         headers: {
-          "x-api-key": process.env.ETSY_CLIENT_ID!,
+          "x-api-key": `${process.env.ETSY_CLIENT_ID}:${process.env.ETSY_CLIENT_SECRET}`,
           Authorization: `Bearer ${accessToken}`,
         },
       },

@@ -84,7 +84,7 @@ export const DebugListings = async (req: any, res: any) => {
     }
 
     const sectionId = process.env.ETSY_STORE_SECTION_ID;
-    const apiKey = (process.env.ETSY_CLIENT_ID || "").trim();
+    const apiKey = `${process.env.ETSY_CLIENT_ID}:${process.env.ETSY_CLIENT_SECRET}`;
     const debugInfo: any = {
       store_id: userInfo.store_id,
       env_section_id: sectionId,
@@ -187,7 +187,7 @@ export const CreateOrderWebhook = async (req: any, res: any): Promise<void> => {
       {
         headers: {
           Authorization: `Bearer ${accessToken}`,
-          "x-api-key": process.env.ETSY_CLIENT_ID,
+          "x-api-key": `${process.env.ETSY_CLIENT_ID}:${process.env.ETSY_CLIENT_SECRET}`,
           "Content-Type": "application/json",
         },
       },
@@ -235,7 +235,7 @@ export const EtsyWebhookHandler = async (req: any, res: any) => {
           `https://openapi.etsy.com/v3/application/listings/${payload.listing_id}`,
           {
             headers: {
-              "x-api-key": process.env.ETSY_CLIENT_ID!,
+              "x-api-key": `${process.env.ETSY_CLIENT_ID}:${process.env.ETSY_CLIENT_SECRET}`,
               Authorization: `Bearer ${accessToken}`,
             },
           },

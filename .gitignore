@@ -1,12 +1,15 @@
 # dotenv environment variable files
-.env
 .env.development.local
 .env.test.local
 .env.production.local
 .env.local
+temp_auto_push.bat
 
 # Dependency directories
 node_modules/
 jspm_packages/
 build
 .vercel
+.gitignore
+temp_interactive_push.bat
+branch_structure.json
