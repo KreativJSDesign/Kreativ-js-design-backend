@@ -45,7 +45,6 @@ export const GetScracthCardProducts = async (req: any, res: any) => {
         return res.status(200).json({
           status: "success",
           products: digitalScratchCardData.Data,
-          // count: digitalScratchCardData.Data.count,
         });
       } else {
         res.status(500).send("Internal Server Error");
@@ -53,6 +52,87 @@ export const GetScracthCardProducts = async (req: any, res: any) => {
     }
   } catch (error) {
     res.status(500).send("Internal Server Error");
+  }
+};
+
+export const DebugListings = async (req: any, res: any) => {
+  try {
+    const userInfo = await UserModel.findOne({
+      username: "jaynayinfo@gmail.com",
+    });
+    if (!userInfo?.access_token) {
+      return res.status(404).json({ error: "No user or access token found" });
+    }
+
+    const accessToken = await refreshAccessToken(userInfo);
+    if (!accessToken) {
+      return res.status(401).json({ error: "Failed to refresh access token" });
+    }
+
+    const sectionId = process.env.ETSY_STORE_SECTION_ID;
+    const debugInfo: any = {
+      store_id: userInfo.store_id,
+      env_section_id: sectionId,
+      token_refreshed: true,
+    };
+
+    // Fetch all shop sections
+    const sectionsResponse = await axios.get(
+      `https://openapi.etsy.com/v3/application/shops/${userInfo.store_id}/sections`,
+      {
+        headers: {
+          "x-api-key": process.env.ETSY_CLIENT_ID!,
+          Authorization: `Bearer ${accessToken}`,
+        },
+      },
+    );
+
+    debugInfo.shop_sections = sectionsResponse.data.results?.map((s: any) => ({
+      shop_section_id: s.shop_section_id,
+      title: s.title,
+    }));
+
+    // Check if configured section exists
+    const matchedSection = sectionsResponse.data.results?.find(
+      (s: any) => s.shop_section_id === parseInt(sectionId || "0"),
+    );
+    debugInfo.section_matched = !!matchedSection;
+    debugInfo.matched_section_title = matchedSection?.title || null;
+
+    // Try fetching listings for the configured section
+    if (matchedSection) {
+      const listingsResponse = await axios.get(
+        `https://openapi.etsy.com/v3/application/shops/${userInfo.store_id}/listings`,
+        {
+          headers: {
+            "x-api-key": process.env.ETSY_CLIENT_ID!,
+            Authorization: `Bearer ${accessToken}`,
+          },
+          params: {
+            shop_section_id: parseInt(sectionId || "0"),
+            limit: 10,
+            include_private: true,
+          },
+        },
+      );
+
+      debugInfo.listings_count = listingsResponse.data.results?.length || 0;
+      debugInfo.listings_sample = listingsResponse.data.results?.map(
+        (l: any) => ({
+          listing_id: l.listing_id,
+          title: l.title,
+          state: l.state,
+          shop_section_id: l.shop_section_id,
+        }),
+      );
+    }
+
+    return res.status(200).json(debugInfo);
+  } catch (error: any) {
+    return res.status(500).json({
+      error: "Debug failed",
+      details: error.response?.data || error.message,
+    });
   }
 };
 
