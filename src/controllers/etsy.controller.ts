@@ -147,6 +147,18 @@ export const DebugListings = async (req: any, res: any) => {
     return res.status(500).json({
       error: "Debug failed",
       details: error.response?.data || error.message,
+      envCheck: {
+        PORT: !!process.env.PORT,
+        MONGODB_URI: !!process.env.MONGODB_URI,
+        ETSY_CLIENT_ID: !!process.env.ETSY_CLIENT_ID,
+        ETSY_CLIENT_ID_preview: process.env.ETSY_CLIENT_ID
+          ? process.env.ETSY_CLIENT_ID.substring(0, 4) + "..."
+          : "MISSING",
+        ETSY_CLIENT_SECRET: !!process.env.ETSY_CLIENT_SECRET,
+        ETSY_STORE_SECTION_ID: !!process.env.ETSY_STORE_SECTION_ID,
+        ETSY_STORE_SECTION_ID_value: process.env.ETSY_STORE_SECTION_ID || "MISSING",
+        NODE_ENV: process.env.NODE_ENV || "MISSING",
+      },
     });
   }
 };
