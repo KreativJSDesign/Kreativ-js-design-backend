@@ -39,7 +39,7 @@ export const fetchUserData = async (accessToken: string) => {
     `${ETSY_CONFIG.BASE_URL}/application/users/${userId}`,
     {
       headers: {
-        "x-api-key": process.env.ETSY_CLIENT_ID as string,
+        "x-api-key": `${process.env.ETSY_CLIENT_ID}:${process.env.ETSY_CLIENT_SECRET}`,
         Authorization: `Bearer ${accessToken}`,
       },
     },

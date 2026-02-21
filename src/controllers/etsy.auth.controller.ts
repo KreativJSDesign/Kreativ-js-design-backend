@@ -73,7 +73,7 @@ export async function fetchEtsyUserInfo(accessToken: string) {
 
     const headers = {
       Authorization: `Bearer ${accessToken}`,
-      "x-api-key": process.env.ETSY_CLIENT_ID!,
+      "x-api-key": `${process.env.ETSY_CLIENT_ID}:${process.env.ETSY_CLIENT_SECRET}`,
     };
 
     // Fetch user details

@@ -157,7 +157,7 @@ export async function fetchEmails() {
             `https://openapi.etsy.com/v3/application/shops/${userInfo.store_id}/transactions/${transactionID}`,
             {
               headers: {
-                "x-api-key": process.env.ETSY_CLIENT_ID!,
+                "x-api-key": `${process.env.ETSY_CLIENT_ID}:${process.env.ETSY_CLIENT_SECRET}`,
                 Authorization: `Bearer ${accessToken}`,
               },
             },
