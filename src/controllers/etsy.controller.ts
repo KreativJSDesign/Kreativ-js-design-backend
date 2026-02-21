@@ -84,10 +84,14 @@ export const DebugListings = async (req: any, res: any) => {
     }
 
     const sectionId = process.env.ETSY_STORE_SECTION_ID;
+    const apiKey = process.env.ETSY_CLIENT_ID!;
     const debugInfo: any = {
       store_id: userInfo.store_id,
       env_section_id: sectionId,
       token_refreshed: true,
+      api_key_length: apiKey.length,
+      api_key_trimmed_length: apiKey.trim().length,
+      api_key_has_whitespace: apiKey !== apiKey.trim(),
       envCheck,
     };
 
@@ -96,7 +100,7 @@ export const DebugListings = async (req: any, res: any) => {
       `https://openapi.etsy.com/v3/application/shops/${userInfo.store_id}/sections`,
       {
         headers: {
-          "x-api-key": process.env.ETSY_CLIENT_ID!,
+          "x-api-key": apiKey.trim(),
           Authorization: `Bearer ${accessToken}`,
         },
       },
