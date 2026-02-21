@@ -57,16 +57,30 @@ export const GetScracthCardProducts = async (req: any, res: any) => {
 
 export const DebugListings = async (req: any, res: any) => {
   try {
+    // Check which env vars are loaded (without revealing values)
+    const envCheck: any = {
+      PORT: !!process.env.PORT,
+      MONGODB_URI: !!process.env.MONGODB_URI,
+      ETSY_CLIENT_ID: !!process.env.ETSY_CLIENT_ID,
+      ETSY_CLIENT_ID_preview: process.env.ETSY_CLIENT_ID
+        ? process.env.ETSY_CLIENT_ID.substring(0, 4) + "..."
+        : "MISSING",
+      ETSY_CLIENT_SECRET: !!process.env.ETSY_CLIENT_SECRET,
+      ETSY_STORE_SECTION_ID: !!process.env.ETSY_STORE_SECTION_ID,
+      ETSY_STORE_SECTION_ID_value: process.env.ETSY_STORE_SECTION_ID || "MISSING",
+      NODE_ENV: process.env.NODE_ENV || "MISSING",
+    };
+
     const userInfo = await UserModel.findOne({
       username: "jaynayinfo@gmail.com",
     });
     if (!userInfo?.access_token) {
-      return res.status(404).json({ error: "No user or access token found" });
+      return res.status(404).json({ error: "No user or access token found", envCheck });
     }
 
     const accessToken = await refreshAccessToken(userInfo);
     if (!accessToken) {
-      return res.status(401).json({ error: "Failed to refresh access token" });
+      return res.status(401).json({ error: "Failed to refresh access token", envCheck });
     }
 
     const sectionId = process.env.ETSY_STORE_SECTION_ID;
@@ -74,6 +88,7 @@ export const DebugListings = async (req: any, res: any) => {
       store_id: userInfo.store_id,
       env_section_id: sectionId,
       token_refreshed: true,
+      envCheck,
     };
 
     // Fetch all shop sections
