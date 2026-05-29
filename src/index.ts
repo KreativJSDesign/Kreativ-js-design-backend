@@ -5,7 +5,6 @@ import helmet from "helmet";
 import morgan from "morgan";
 import passport from "passport";
 import rateLimit from "express-rate-limit";
-import cron from "node-cron";
 import {
   Strategy as JwtStrategy,
   ExtractJwt,
@@ -19,9 +18,6 @@ import UserModel from "./model/userModel";
 import dotenvExpand from "dotenv-expand";
 import cookieParser from "cookie-parser";
 import bodyParser from "body-parser";
-// import { fetchLatestOrders } from "./controllers/newOrder.controller";
-import { fetchEmails } from "./controllers/email.controller";
-import axios from "axios";
 // Initialize environment variables
 const env = dotenv.config();
 dotenvExpand.expand(env);
@@ -140,10 +136,7 @@ app.use(async (req: Request, res: Response, next: NextFunction) => {
 
 // Routes
 app.use("/api", route);
-// cron.schedule("*/4 * * * *", fetchLatestOrders);
-cron.schedule("*/4 * * * *", fetchEmails);
-
-console.log("⏳ Etsy order checker started. Running every 4 minutes...");
+console.log("⏳ Email cron runs via external cron service → POST /api/cron/fetch-emails");
 // Health Check Endpoint
 app.get("/health", (req: Request, res: Response) => {
   res.status(200).json({ status: "OK", timestamp: new Date() });
