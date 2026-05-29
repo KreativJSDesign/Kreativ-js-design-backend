@@ -4,6 +4,7 @@ import passport from "passport";
 import {
   CreateOrderWebhook,
   DebugListings,
+  DebugRawListings,
   EtsyWebhookHandler,
   GetScracthCardProducts,
 } from "../../controllers/etsy.controller";
@@ -13,6 +14,7 @@ router.use("/auth", etsyAuthRouter);
 // router.get("/listings", passport.authenticate("jwt", { session: false }), GetScracthCardProducts);
 router.get("/listings", GetScracthCardProducts);
 router.get("/debug-listings", DebugListings);
+router.get("/debug-raw-listings", DebugRawListings);
 router.post("/create-etsy-webhook", CreateOrderWebhook);
 router.post("/etsy-webhook", EtsyWebhookHandler);
 export default router;

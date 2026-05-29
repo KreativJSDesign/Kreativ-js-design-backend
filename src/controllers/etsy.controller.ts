@@ -206,6 +206,38 @@ export const CreateOrderWebhook = async (req: any, res: any): Promise<void> => {
   }
 };
 
+export const DebugRawListings = async (req: any, res: any) => {
+  try {
+    const userInfo = await UserModel.findOne({ username: "jaynayinfo@gmail.com" });
+    if (!userInfo?.access_token) return res.status(404).json({ error: "No user found" });
+    const accessToken = await refreshAccessToken(userInfo);
+    if (!accessToken) return res.status(401).json({ error: "Token refresh failed" });
+
+    const sectionId = process.env.ETSY_STORE_SECTION_ID;
+    const apiKey = `${process.env.ETSY_CLIENT_ID}:${process.env.ETSY_CLIENT_SECRET}`;
+
+    const response = await axios.get(
+      `https://openapi.etsy.com/v3/application/shops/${userInfo.store_id}/listings`,
+      {
+        headers: { "x-api-key": apiKey, Authorization: `Bearer ${accessToken}` },
+        params: { shop_section_id: sectionId, limit: 10, include_private: true },
+      }
+    );
+
+    return res.status(200).json({
+      total: response.data.count,
+      results: response.data.results?.map((l: any) => ({
+        listing_id: l.listing_id,
+        title: l.title,
+        state: l.state,
+        shop_section_id: l.shop_section_id,
+      })),
+    });
+  } catch (error: any) {
+    return res.status(500).json({ error: error.response?.data || error.message });
+  }
+};
+
 export const EtsyWebhookHandler = async (req: any, res: any) => {
   const payload = req.body;
 
