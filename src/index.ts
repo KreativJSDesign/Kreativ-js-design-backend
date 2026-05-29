@@ -128,9 +128,13 @@ passport.use(
   }),
 );
 
-// Database Connection (called as middleware so each request waits for connection)
+// Database Connection middleware
 app.use(async (req: Request, res: Response, next: NextFunction) => {
-  await connectToDb();
+  const connected = await connectToDb();
+  if (!connected) {
+    res.status(503).json({ error: "Database unavailable" });
+    return;
+  }
   next();
 });
 
