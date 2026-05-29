@@ -128,8 +128,11 @@ passport.use(
   }),
 );
 
-// Database Connection
-connectToDb();
+// Database Connection (called as middleware so each request waits for connection)
+app.use(async (req: Request, res: Response, next: NextFunction) => {
+  await connectToDb();
+  next();
+});
 
 // Routes
 app.use("/api", route);
