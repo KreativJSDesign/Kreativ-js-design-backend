@@ -102,13 +102,13 @@ export const sendEmailNotification = async (
     let transporter = nodemailer.createTransport({
       service: "gmail",
       auth: {
-        user: process.env.SENDER_EMAIL,
-        pass: process.env.SENDER_PASSWORD,
+        user: process.env.User_Email,
+        pass: process.env.User_Password,
       },
     });
 
     let mailOptions = {
-      from: process.env.SENDER_EMAIL,
+      from: process.env.User_Email,
       to: email,
       subject: "Your Digital Scratch Card is Ready!",
       html: `    
