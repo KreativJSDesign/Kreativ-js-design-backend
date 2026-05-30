@@ -1,5 +1,6 @@
 import { Router, Request, Response } from "express";
 import { fetchEmails, debugEmailFlow } from "../../controllers/email.controller";
+import nodemailer from "nodemailer";
 
 const router = Router();
 
@@ -31,6 +32,39 @@ router.post("/debug-emails", async (req: Request, res: Response) => {
   try {
     const result = await debugEmailFlow();
     res.status(200).json(result);
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Test SMTP sending
+router.post("/test-email", async (req: Request, res: Response) => {
+  const secret = req.headers["x-cron-secret"];
+  if (secret !== process.env.CRON_SECRET) {
+    res.status(401).json({ error: "Unauthorized" });
+    return;
+  }
+
+  const testEmail = (req.body as any).email || process.env.User_Email;
+  try {
+    const transporter = nodemailer.createTransport({
+      host: "smtp.gmail.com",
+      port: 587,
+      secure: false,
+      auth: {
+        user: process.env.User_Email,
+        pass: process.env.User_Password,
+      },
+    });
+
+    await transporter.verify();
+    const info = await transporter.sendMail({
+      from: process.env.User_Email,
+      to: testEmail,
+      subject: "SMTP Test - Railway",
+      text: "Diese Email wurde von Railway via SMTP Port 587 gesendet.",
+    });
+    res.status(200).json({ success: true, response: info.response, to: testEmail });
   } catch (error: any) {
     res.status(500).json({ error: error.message });
   }
