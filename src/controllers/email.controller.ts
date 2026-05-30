@@ -98,9 +98,11 @@ export async function fetchEmails() {
     const today = new Date();
     const tomorrow = new Date(today);
     tomorrow.setDate(today.getDate() + 1);
+    const twoDaysAgo = new Date(today);
+    twoDaysAgo.setDate(today.getDate() - 2);
 
     const searchCriteria = [
-      ["SINCE", formatDate(today)],
+      ["SINCE", formatDate(twoDaysAgo)],
       ["BEFORE", formatDate(tomorrow)],
     ];
 
@@ -147,10 +149,15 @@ export async function fetchEmails() {
           console.error("❌ Error fetching transaction ID");
           continue;
         }
+        console.log(`✅ Found transaction ID: ${transactionID}, buyer email: ${email}`);
+
         const transactionHistory = await TransactionModel.findOne({
           transaction_id: transactionID,
         });
-        if (transactionHistory) continue;
+        if (transactionHistory) {
+          console.log(`⏭️ Transaction ${transactionID} already processed, skipping`);
+          continue;
+        }
 
         let transactionData;
         try {
@@ -171,6 +178,8 @@ export async function fetchEmails() {
           );
           continue;
         }
+
+        console.log(`🔍 Transaction listing_id: ${transactionData.listing_id}, checking section...`);
 
         if (
           listingData.some(
@@ -194,7 +203,7 @@ export async function fetchEmails() {
             console.error("❌ Error saving transaction:", error);
           }
         } else {
-          console.warn("⚠️ Listing ID not found in the required section.");
+          console.warn(`⚠️ Listing ID ${transactionData.listing_id} not found in section ${process.env.ETSY_STORE_SECTION_ID}`);
         }
       } catch (error) {
         console.error("❌ Error processing email:", error);
