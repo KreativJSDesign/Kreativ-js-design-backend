@@ -265,16 +265,34 @@ export async function debugEmailFlow() {
 
     logs.push(`📧 Emails found (last 3 days): ${results.length}`);
 
-    // 4. Check for Etsy order emails
+    // 4. Check for Etsy order emails and parse content
     let etsyOrderEmails = 0;
     for (const res of results.slice(0, 20)) {
       if (!res.parts) continue;
       const headerPart = res.parts.find((p: any) => p.which === "HEADER");
+      const textPart = res.parts.find((p: any) => p.which === "TEXT");
       const subject = headerPart?.body.subject?.[0] || "";
       const from = headerPart?.body.from?.[0] || "";
-      if (from.toLowerCase().includes("etsy") || subject.toLowerCase().includes("order") || subject.toLowerCase().includes("bestellung")) {
+      if (from.toLowerCase().includes("etsy") || subject.toLowerCase().includes("bestellung") || subject.toLowerCase().includes("order")) {
         etsyOrderEmails++;
-        logs.push(`  📦 Etsy email: "${subject}"`);
+        logs.push(`  📦 Subject: "${subject}"`);
+
+        // Try to parse transaction ID
+        try {
+          const parsedEmail = await simpleParser(textPart?.body || "");
+          const $ = cheerio.load(parsedEmail.html || parsedEmail.text || "");
+          const textContent = $.text();
+
+          const transactionMatch = textContent.match(/(Transaction ID|Transaktions-Nr\.)[:\s]*(\d+)/);
+          logs.push(`  🔢 Transaction ID: ${transactionMatch ? transactionMatch[2] : "NOT FOUND"}`);
+
+          const emailLink = $("a").filter((i: any, el: any) =>
+            $(el).text().trim() === "Send them an email" || $(el).text().trim() === "Sende dem Käufer eine E-Mail"
+          );
+          logs.push(`  📧 Buyer email link: ${emailLink.attr("href") ? "FOUND" : "NOT FOUND"}`);
+        } catch (e: any) {
+          logs.push(`  ⚠️ Parse error: ${e.message}`);
+        }
       }
     }
     logs.push(`📦 Etsy order emails found: ${etsyOrderEmails}`);
