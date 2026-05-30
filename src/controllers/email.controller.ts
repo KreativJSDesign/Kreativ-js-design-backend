@@ -22,8 +22,8 @@ export async function fetchEmails() {
         port: 993,
         tls: true,
         tlsOptions: { rejectUnauthorized: false },
-        authTimeout: 10000,
-        socketTimeout: 10000,
+        authTimeout: 5000,
+        socketTimeout: 5000,
       },
     };
 
@@ -242,8 +242,8 @@ export async function debugEmailFlow() {
         port: 993,
         tls: true,
         tlsOptions: { rejectUnauthorized: false },
-        authTimeout: 10000,
-        socketTimeout: 10000,
+        authTimeout: 5000,
+        socketTimeout: 5000,
       },
     };
 

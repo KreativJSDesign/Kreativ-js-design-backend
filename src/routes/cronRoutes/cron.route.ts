@@ -13,8 +13,8 @@ router.post("/fetch-emails", async (req: Request, res: Response) => {
 
   try {
     console.log("⏰ Cron triggered: fetchEmails");
-    fetchEmails(); // fire and forget — don't await (IMAP takes time)
-    res.status(200).json({ status: "ok", message: "fetchEmails triggered" });
+    await fetchEmails(); // await so Vercel doesn't kill the function early
+    res.status(200).json({ status: "ok", message: "fetchEmails completed" });
   } catch (error: any) {
     res.status(500).json({ error: error.message });
   }
