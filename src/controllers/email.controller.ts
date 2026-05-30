@@ -128,19 +128,27 @@ export async function fetchEmails() {
         );
         const subject = headerPart?.body.subject?.[0] || "No Subject";
         const parsedEmail = await simpleParser(textPart?.body || "");
-        const $ = cheerio.load(parsedEmail.html || parsedEmail.text);
+        const $ = cheerio.load(parsedEmail.html || parsedEmail.text || "");
 
+        // Find buyer email link — try multiple label variants
         const emailLink = $("a").filter(
-          (i: any, el: any) =>
-            $(el).text().trim() === "Send them an email" ||
-            $(el).text().trim() === "Sende dem Käufer eine E-Mail",
+          (i: any, el: any) => {
+            const text = $(el).text().trim();
+            return text === "Send them an email" ||
+              text === "Sende dem Käufer eine E-Mail" ||
+              text === "Sende eine Nachricht" ||
+              text.toLowerCase().includes("e-mail");
+          }
         );
         const email =
           emailLink.attr("href")?.replace("mailto:", "") || "Not Found";
+
         const textContent = $.text();
-        const transactionMatch = textContent.match(
-          /(Transaction ID|Transaktions-Nr\.)[:\s]*(\d+)/,
-        );
+        // Try multiple patterns to extract transaction ID
+        const transactionMatch =
+          textContent.match(/(Transaction ID|Transaktions-Nr\.|Transaktions-ID)[.:\s]*(\d{10,})/i) ||
+          parsedEmail.text?.match(/(Transaction ID|Transaktions-Nr\.|Transaktions-ID)[.:\s]*(\d{10,})/i);
+
         const transactionID = transactionMatch
           ? transactionMatch[2]
           : "Not Found";
