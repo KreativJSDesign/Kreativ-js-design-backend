@@ -213,3 +213,79 @@ export async function fetchEmails() {
     }
   }
 }
+
+export async function debugEmailFlow() {
+  const logs: string[] = [];
+  let connection: any = null;
+
+  try {
+    // 1. Check env vars
+    logs.push(`User_Email: ${process.env.User_Email ? "✅ set (" + process.env.User_Email + ")" : "❌ MISSING"}`);
+    logs.push(`User_Password: ${process.env.User_Password ? "✅ set" : "❌ MISSING"}`);
+    logs.push(`ETSY_STORE_SECTION_ID: ${process.env.ETSY_STORE_SECTION_ID || "❌ MISSING"}`);
+
+    // 2. Try IMAP connection
+    const config = {
+      imap: {
+        user: process.env.User_Email,
+        password: process.env.User_Password,
+        host: "imap.gmail.com",
+        port: 993,
+        tls: true,
+        tlsOptions: { rejectUnauthorized: false },
+        authTimeout: 10000,
+        socketTimeout: 10000,
+      },
+    };
+
+    try {
+      connection = await imaps.connect(config);
+      logs.push("✅ IMAP connected successfully");
+    } catch (err: any) {
+      logs.push(`❌ IMAP connection failed: ${err.message}`);
+      return { logs };
+    }
+
+    // 3. Check inbox
+    await connection.openBox("INBOX");
+    logs.push("✅ Inbox opened");
+
+    const formatDate = (date: Date): string => {
+      const months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+      return `${date.getDate().toString().padStart(2, "0")}-${months[date.getMonth()]}-${date.getFullYear()}`;
+    };
+
+    // Search last 3 days to catch test purchases
+    const threeDaysAgo = new Date();
+    threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
+
+    const searchCriteria = [["SINCE", formatDate(threeDaysAgo)]];
+    const fetchOptions = { bodies: ["HEADER", "TEXT"], markSeen: false };
+    const results = await connection.search(searchCriteria, fetchOptions);
+
+    logs.push(`📧 Emails found (last 3 days): ${results.length}`);
+
+    // 4. Check for Etsy order emails
+    let etsyOrderEmails = 0;
+    for (const res of results.slice(0, 20)) {
+      if (!res.parts) continue;
+      const headerPart = res.parts.find((p: any) => p.which === "HEADER");
+      const subject = headerPart?.body.subject?.[0] || "";
+      const from = headerPart?.body.from?.[0] || "";
+      if (from.toLowerCase().includes("etsy") || subject.toLowerCase().includes("order") || subject.toLowerCase().includes("bestellung")) {
+        etsyOrderEmails++;
+        logs.push(`  📦 Etsy email: "${subject}"`);
+      }
+    }
+    logs.push(`📦 Etsy order emails found: ${etsyOrderEmails}`);
+
+    return { logs };
+  } catch (error: any) {
+    logs.push(`❌ Error: ${error.message}`);
+    return { logs };
+  } finally {
+    if (connection) {
+      try { connection.end(); } catch (_) {}
+    }
+  }
+}
