@@ -169,48 +169,46 @@ export async function fetchEmails() {
           continue;
         }
 
-        let transactionData;
-        try {
-          const response = await axios.get(
-            `https://openapi.etsy.com/v3/application/shops/${userInfo.store_id}/transactions/${transactionID}`,
-            {
-              headers: {
-                "x-api-key": `${process.env.ETSY_CLIENT_ID}:${process.env.ETSY_CLIENT_SECRET}`,
-                Authorization: `Bearer ${accessToken}`,
-              },
-            },
-          );
-          transactionData = response.data;
-        } catch (error: any) {
-          console.error(
-            `❌ Error fetching transaction ID ${transactionID}:`,
-            error.response?.data || error.message,
-          );
-          continue;
-        }
+        // Parse receipt_id from email subject: "...(4076898991)"
+        const receiptIdMatch = subject.match(/\((\d+)\)$/);
+        const receiptIdFromSubject = receiptIdMatch ? receiptIdMatch[1] : null;
 
-        // Get buyer email from Etsy receipt API (more reliable than email parsing)
-        let buyerEmail = email; // fallback to parsed email
+        // Fetch transaction + receipt in parallel for speed
+        let transactionData: any;
+        let buyerEmail = email; // fallback
+
         try {
-          const receiptId = transactionData.receipt_id;
-          if (receiptId) {
-            const receiptResponse = await axios.get(
-              `https://openapi.etsy.com/v3/application/shops/${userInfo.store_id}/receipts/${receiptId}`,
-              {
-                headers: {
-                  "x-api-key": `${process.env.ETSY_CLIENT_ID}:${process.env.ETSY_CLIENT_SECRET}`,
-                  Authorization: `Bearer ${accessToken}`,
-                },
-              },
+          const apiHeaders = {
+            "x-api-key": `${process.env.ETSY_CLIENT_ID}:${process.env.ETSY_CLIENT_SECRET}`,
+            Authorization: `Bearer ${accessToken}`,
+          };
+
+          const promises: Promise<any>[] = [
+            axios.get(
+              `https://openapi.etsy.com/v3/application/shops/${userInfo.store_id}/transactions/${transactionID}`,
+              { headers: apiHeaders }
+            )
+          ];
+
+          if (receiptIdFromSubject) {
+            promises.push(
+              axios.get(
+                `https://openapi.etsy.com/v3/application/shops/${userInfo.store_id}/receipts/${receiptIdFromSubject}`,
+                { headers: apiHeaders }
+              ).catch(() => null)
             );
-            const receiptEmail = receiptResponse.data?.buyer_email;
-            if (receiptEmail && receiptEmail.includes("@")) {
-              buyerEmail = receiptEmail;
-              console.log(`📧 Got buyer email from receipt API: ${buyerEmail}`);
-            }
           }
-        } catch (err: any) {
-          console.warn(`⚠️ Could not get buyer email from receipt API: ${err.message}`);
+
+          const results = await Promise.all(promises);
+          transactionData = results[0].data;
+
+          if (results[1]?.data?.buyer_email?.includes("@")) {
+            buyerEmail = results[1].data.buyer_email;
+            console.log(`📧 Buyer email from receipt: ${buyerEmail}`);
+          }
+        } catch (error: any) {
+          console.error(`❌ Error fetching transaction ${transactionID}:`, error.response?.data || error.message);
+          continue;
         }
 
         console.log(`🔍 Transaction listing_id: ${transactionData.listing_id}, buyer: ${buyerEmail}`);
