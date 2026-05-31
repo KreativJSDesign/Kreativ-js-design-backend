@@ -1,6 +1,7 @@
 import { Router, Request, Response } from "express";
 import { fetchEmails, debugEmailFlow } from "../../controllers/email.controller";
 import nodemailer from "nodemailer";
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 
 const router = Router();
 
