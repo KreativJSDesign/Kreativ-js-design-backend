@@ -104,6 +104,7 @@ export async function fetchEmails() {
     const searchCriteria = [
       ["SINCE", formatDate(twoDaysAgo)],
       ["BEFORE", formatDate(tomorrow)],
+      ["FROM", "transaction@etsy.com"],
     ];
 
     const fetchOptions = { bodies: ["HEADER", "TEXT"], markSeen: false };
