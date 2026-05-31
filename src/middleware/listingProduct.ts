@@ -1,5 +1,4 @@
 import axios from "axios";
-import nodemailer from "nodemailer";
 
 export const getListingsBySection = async (
   shopId: string,
@@ -99,21 +98,11 @@ export const sendEmailNotification = async (
   scratchCardLink: string,
 ) => {
   try {
-    const transporter = nodemailer.createTransport({
-      host: "smtp-relay.brevo.com",
-      port: 587,
-      secure: false,
-      auth: {
-        user: process.env.BREVO_LOGIN,
-        pass: process.env.BREVO_PASSWORD,
-      },
-    });
-
     let mailOptions = {
-      from: `KreativJS Design <${process.env.User_Email}>`,
-      to: email,
+      sender: { name: "KreativJS Design", email: process.env.User_Email || "kreativjsdesign@gmail.com" },
+      to: [{ email }],
       subject: "Your Digital Scratch Card is Ready!",
-      html: `    
+      htmlContent: `
         <!DOCTYPE html>
         <html lang="en">
         <head>
@@ -192,9 +181,13 @@ export const sendEmailNotification = async (
       `,
     };
 
-    const info = await transporter.sendMail(mailOptions);
-    console.log("Email sent:", info.response);
-    return info;
+    const info = await axios.post(
+      "https://api.brevo.com/v3/smtp/email",
+      mailOptions,
+      { headers: { "api-key": process.env.BREVO_API_KEY, "Content-Type": "application/json" } }
+    );
+    console.log("Email sent via Brevo API:", info.data?.messageId);
+    return info.data;
   } catch (error) {
     console.error("Error sending email:", error);
     throw error;
