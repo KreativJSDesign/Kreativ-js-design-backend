@@ -100,17 +100,17 @@ export const sendEmailNotification = async (
 ) => {
   try {
     const transporter = nodemailer.createTransport({
-      host: "smtp.gmail.com",
+      host: "smtp-relay.brevo.com",
       port: 587,
       secure: false,
       auth: {
-        user: process.env.User_Email,
-        pass: process.env.User_Password,
+        user: process.env.BREVO_LOGIN,
+        pass: process.env.BREVO_PASSWORD,
       },
     });
 
     let mailOptions = {
-      from: process.env.User_Email,
+      from: `KreativJS Design <${process.env.User_Email}>`,
       to: email,
       subject: "Your Digital Scratch Card is Ready!",
       html: `    
