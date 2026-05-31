@@ -49,18 +49,17 @@ router.post("/test-email", async (req: Request, res: Response) => {
   const testEmail = (req.body as any).email || process.env.User_Email;
   try {
     const transporter = nodemailer.createTransport({
-      host: "smtp.gmail.com",
+      host: "smtp-relay.brevo.com",
       port: 587,
       secure: false,
       auth: {
-        user: process.env.User_Email,
-        pass: process.env.User_Password,
+        user: process.env.BREVO_LOGIN,
+        pass: process.env.BREVO_PASSWORD,
       },
     });
 
-    await transporter.verify();
     const info = await transporter.sendMail({
-      from: process.env.User_Email,
+      from: `KreativJS Design <${process.env.User_Email}>`,
       to: testEmail,
       subject: "SMTP Test - Railway",
       text: "Diese Email wurde von Railway via SMTP Port 587 gesendet.",
