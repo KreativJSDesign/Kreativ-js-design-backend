@@ -189,18 +189,42 @@ export async function fetchEmails() {
           continue;
         }
 
-        console.log(`🔍 Transaction listing_id: ${transactionData.listing_id}, checking section...`);
+        // Get buyer email from Etsy receipt API (more reliable than email parsing)
+        let buyerEmail = email; // fallback to parsed email
+        try {
+          const receiptId = transactionData.receipt_id;
+          if (receiptId) {
+            const receiptResponse = await axios.get(
+              `https://openapi.etsy.com/v3/application/shops/${userInfo.store_id}/receipts/${receiptId}`,
+              {
+                headers: {
+                  "x-api-key": `${process.env.ETSY_CLIENT_ID}:${process.env.ETSY_CLIENT_SECRET}`,
+                  Authorization: `Bearer ${accessToken}`,
+                },
+              },
+            );
+            const receiptEmail = receiptResponse.data?.buyer_email;
+            if (receiptEmail && receiptEmail.includes("@")) {
+              buyerEmail = receiptEmail;
+              console.log(`📧 Got buyer email from receipt API: ${buyerEmail}`);
+            }
+          }
+        } catch (err: any) {
+          console.warn(`⚠️ Could not get buyer email from receipt API: ${err.message}`);
+        }
+
+        console.log(`🔍 Transaction listing_id: ${transactionData.listing_id}, buyer: ${buyerEmail}`);
 
         if (
           listingData.some(
             (item) => item.listing_id === transactionData.listing_id,
           )
         ) {
-          
+
           const NewTransaction = {
             transaction_id: transactionData.transaction_id,
             listing_id: transactionData.listing_id,
-            customerEmail: email,
+            customerEmail: buyerEmail,
             lastDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
           };
 
@@ -208,7 +232,7 @@ export async function fetchEmails() {
             const transactionInfo =
               await TransactionModel.create(NewTransaction);
             const scratchCardLink = `${process.env.NODE_ENV === "production" ? process.env.FRONTEND_URL_PROD : process.env.FRONTEND_URL_LOCAL}/customize-card/${transactionInfo._id}`;
-            await sendEmailNotification(email, scratchCardLink);
+            await sendEmailNotification(buyerEmail, scratchCardLink);
           } catch (error: any) {
             console.error("❌ Error saving transaction:", error);
           }
