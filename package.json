@@ -4,9 +4,9 @@
   "description": "Node app that makes requests to Etsy's Open API.",
   "main": "index.js",
   "scripts": {
-    "build": "tsc",
-    "start": "node build/index.js",
-    "dev": "nodemon src/index.ts",
+    "build": "node api.js && tsc",
+    "start": "node api.js && node build/index.js",
+    "dev": "node api.js && nodemon src/index.ts",
     "format": "prettier --write .",
     "check-format": "prettier --check ."
   },
