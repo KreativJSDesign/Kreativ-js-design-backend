@@ -1,5 +1,5 @@
 import axios from "axios";
-import nodemailer from "nodemailer";
+import { Resend } from "resend";
 
 export const getListingsBySection = async (
   shopId: string,
@@ -99,18 +99,10 @@ export const sendEmailNotification = async (
   scratchCardLink: string,
 ) => {
   try {
-    let transporter = nodemailer.createTransport({
-      host: "smtp.gmail.com",
-      port: 587,
-      secure: false,
-      auth: {
-        user: process.env.User_Email,
-        pass: process.env.User_Password,
-      },
-    });
+    const resend = new Resend(process.env.RESEND_API_KEY);
 
     let mailOptions = {
-      from: process.env.User_Email,
+      from: "KreativJS Design <onboarding@resend.dev>",
       to: email,
       subject: "Your Digital Scratch Card is Ready!",
       html: `    
@@ -192,8 +184,8 @@ export const sendEmailNotification = async (
       `,
     };
 
-    const info = await transporter.sendMail(mailOptions);
-    console.log("Email sent: " + info.response);
+    const info = await resend.emails.send(mailOptions);
+    console.log("Email sent via Resend:", JSON.stringify(info));
     return info;
   } catch (error) {
     console.error("Error sending email:", error);
