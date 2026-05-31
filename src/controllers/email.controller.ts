@@ -130,14 +130,16 @@ export async function fetchEmails() {
         const parsedEmail = await simpleParser(textPart?.body || "");
         const $ = cheerio.load(parsedEmail.html || parsedEmail.text || "");
 
-        // Find buyer email link — try multiple label variants
+        // Find buyer email link — must be a mailto: link
         const emailLink = $("a").filter(
           (i: any, el: any) => {
+            const href = $(el).attr("href") || "";
             const text = $(el).text().trim();
-            return text === "Send them an email" ||
-              text === "Sende dem Käufer eine E-Mail" ||
-              text === "Sende eine Nachricht" ||
-              text.toLowerCase().includes("e-mail");
+            // Only accept mailto: links with exact label matches
+            return href.startsWith("mailto:") && (
+              text === "Send them an email" ||
+              text === "Sende dem Käufer eine E-Mail"
+            );
           }
         );
         const email =
